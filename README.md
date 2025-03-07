@@ -6,11 +6,10 @@ Contains coding exercises and tutorials to build a solid **Typescript** knowledg
 ## Project Structure
 
 - `src/` → Contains the TypeScript source files.
-- `dist/` → Contains the compiled JavaScript files.
+- `yarn.lock` → Locks the dependencies to specific versions.
 - `.gitignore` → Specifies files and directories to be ignored by Git.
 - `.editorconfig` → Defines coding styles for the project.
 - `.gitattributes` → Ensures consistent Git attributes.
-- `yarn.lock` → Locks the dependencies to specific versions.
 - `.pnp.cjs` → Used by Yarn Plug'n'Play to manage dependencies.
 
 ## Getting Started
