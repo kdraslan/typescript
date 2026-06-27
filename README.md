@@ -1,62 +1,41 @@
-# Typescript
+<p align="center">
+  <img alt="TypeScript" src="assets/typescript.svg" width="84">
+</p>
 
-Contains coding exercises and tutorials to build a solid **Typescript** knowledge.
-> See the course followed [here](https://www.typescript-training.com).
+<h1 align="center">TypeScript</h1>
 
-## Project Structure
+<p align="center">Coding exercises and tutorials to build a solid TypeScript foundation.</p>
 
-- `src/` → Contains the TypeScript source files.
-- `yarn.lock` → Locks the dependencies to specific versions.
-- `.gitignore` → Specifies files and directories to be ignored by Git.
-- `.editorconfig` → Defines coding styles for the project.
-- `.gitattributes` → Ensures consistent Git attributes.
-- `.pnp.cjs` → Used by Yarn Plug'n'Play to manage dependencies.
+<p align="center">Following the course at <a href="https://www.typescript-training.com">typescript-training.com</a>.</p>
 
-## Getting Started
+---
 
-### Prerequisites
+## What this is
 
-- Node.js
-- Yarn
+A personal learning repo for working through TypeScript fundamentals, exercise by exercise, alongside
+the linked course. Companion to the [React training repo](https://github.com/kdraslan/react): React
+first (in plain JS), then TypeScript on top here.
 
-### Installation
+## Getting started
 
-1. Clone the repository:
-   ```sh
-   git clone <repository-url>
-   cd <repository-directory>
-   ```
+Prerequisites: Node.js and Yarn (Berry). Dependencies use Yarn Plug'n'Play (`.pnp.cjs`), so there is
+no `node_modules` folder.
 
-2. Install dependencies:
-   ```sh
-   yarn install
-   ```
-
-### Running the Project
-
-To compile the TypeScript files and run the project:
 ```sh
-yarn build
-yarn start
+yarn install
 ```
 
-### Development
+Type-check the source with the TypeScript compiler:
 
-To start the development server with hot reloading:
 ```sh
-yarn dev
+yarn tsc --noEmit
 ```
 
-### Linting
+> Build / dev / lint / test scripts will be added to `package.json` as the project grows.
 
-To lint the code using ESLint:
-```sh
-yarn lint
-```
+## Project structure
 
-### Testing
-
-To run the tests:
-```sh
-yarn test
-```
+- `src/` — TypeScript source files (exercises and notes).
+- `tsconfig.json` — compiler configuration.
+- `package.json` · `yarn.lock` · `.pnp.cjs` — Yarn Berry (Plug'n'Play) dependency management.
+- `.editorconfig` · `.gitattributes` · `.gitignore` — editor and Git hygiene.
