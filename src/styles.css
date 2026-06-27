@@ -1,0 +1,367 @@
+/* Design tokens. Dark is the default; [data-theme="light"] overrides the same names. */
+:root {
+  --bg: #0f1115;
+  --bg-panel: #171a21;
+  --bg-elevated: #1f232c;
+  --border: #2a2f3a;
+  --text: #e6e9ef;
+  --text-dim: #9aa3b2;
+  --accent: #6ea8fe;
+  --accent-soft: #1d2a44;
+  --ok: #7ee787;
+  --err: #ff7b72;
+  --radius: 10px;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Syntax colours (dark). Used by the .hljs-* rules below, so highlighting follows the theme. */
+  --syn-base: #c9d1d9;
+  --syn-keyword: #ff7b72;
+  --syn-tag: #7ee787;
+  --syn-attr: #79c0ff;
+  --syn-string: #a5d6ff;
+  --syn-title: #d2a8ff;
+  --syn-built-in: #ffa657;
+  --syn-number: #79c0ff;
+  --syn-comment: #8b949e;
+}
+
+[data-theme="light"] {
+  --bg: #f6f7f9;
+  --bg-panel: #ffffff;
+  --bg-elevated: #eef1f5;
+  --border: #d7dce3;
+  --text: #1b1f27;
+  --text-dim: #5b6472;
+  --accent: #2f6fed;
+  --accent-soft: #e4ecfd;
+  --ok: #116329;
+  --err: #cf222e;
+
+  --syn-base: #1f2328;
+  --syn-keyword: #cf222e;
+  --syn-tag: #116329;
+  --syn-attr: #0550ae;
+  --syn-string: #0a3069;
+  --syn-title: #8250df;
+  --syn-built-in: #953800;
+  --syn-number: #0550ae;
+  --syn-comment: #6e7781;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr); /* minmax(0,..) lets the content column shrink so long code scrolls inside, not the page */
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar h1 { font-size: 18px; margin: 0 8px 20px; }
+
+.theme-toggle {
+  position: fixed;                 /* pinned to the viewport, top-right, above everything */
+  top: 20px;
+  right: 26px;                     /* matches .content's right padding, so it lines up with the tiles' edge */
+  z-index: 1100;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.nav-section { margin-bottom: 18px; }
+
+.nav-section h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin: 0 8px 6px;
+}
+
+.nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: var(--text-dim);
+  padding: 7px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.nav-item.active { background: var(--accent-soft); color: var(--accent); }
+
+@media (hover: hover) {
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .nav-item:hover { background: var(--bg-elevated); color: var(--text); }
+}
+
+/* Content fills the viewport height as a column: fixed header, then the split takes the rest. */
+.content {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-width: 0;                    /* allow the column to shrink below its content width */
+  padding: 22px 26px;
+  width: 100%;
+}
+
+.lesson-header { flex: 0 0 auto; }
+
+.lesson-header h3 { margin: 0 0 4px; font-size: 24px; }
+.summary { color: var(--text-dim); margin: 0 0 18px; }
+
+/* Resizable split (ported from the React app's ResizableGrid). */
+.rg-grid {
+  display: flex;
+  align-items: stretch;            /* both columns are full height, so the gutter is too */
+  flex: 1;                         /* fill the remaining viewport height under the header */
+  width: 100%;
+  min-width: 0;                    /* don't let a wide code line stretch the split past the viewport */
+  min-height: 0;
+}
+
+.rg-column {
+  display: flex;
+  flex-direction: column;
+  flex-basis: 0;                   /* width comes from flex-grow (the weight), not content */
+  min-width: 0;
+}
+
+.rg-gutter {
+  flex: 0 0 14px;
+  cursor: col-resize;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;                        /* space between the line halves and the dots */
+}
+
+.rg-line {                         /* the two divider halves above and below the dots */
+  flex: 1;
+  width: 2px;
+  border-radius: 3px;
+  background: var(--border);
+}
+
+.rg-dots { display: flex; flex-direction: column; gap: 3px; }
+.rg-dots i { display: block; width: 3px; height: 3px; border-radius: 2px; background: var(--text-dim); }
+
+/* On hover/drag the dots take the full accent and pop; the lines only get a faint tint. */
+.rg-gutter.dragging .rg-line { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.rg-gutter.dragging .rg-dots i { background: var(--accent); }
+
+@media (hover: hover) {
+  .rg-gutter:hover .rg-line { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+  .rg-gutter:hover .rg-dots i { background: var(--accent); }
+}
+
+/* Panels */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex: 1;                         /* fill the column's height */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panel-label {
+  display: block;
+  padding: 9px 14px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.demo { padding: 18px; flex: 1; overflow: auto; min-height: 0; } /* scroll inside the tile if content overflows */
+
+/* Code panel, clean source with explanations on hover. */
+.code.hljs {
+  background: var(--bg-panel);
+  color: var(--syn-base);
+  margin: 0;
+  padding: 12px 6px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  overflow: auto;                  /* scroll the source inside the tile, both axes */
+  flex: 1;
+  min-height: 0;
+}
+
+.code-line {
+  white-space: pre;                /* keep indentation, don't wrap */
+  width: max-content;
+  min-width: 100%;                 /* so the hover background spans the full line, even short ones */
+  padding: 0 8px;
+  border-radius: 6px;
+}
+
+.code-line.has-note { cursor: help; }
+
+@media (hover: hover) {
+  .code-line.has-note:hover { background: var(--accent-soft); }   /* subtle, no outline */
+}
+
+.code-tip {
+  position: fixed;
+  max-width: min(520px, calc(100vw - 32px));  /* moderate width; content wraps so it never scrolls sideways */
+  padding: 10px 13px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  pointer-events: none;            /* not interactive: the tooltip closes when you leave the line */
+}
+
+/* Rendered markdown inside a tooltip. */
+.code-tip > :first-child { margin-top: 0; }
+.code-tip > :last-child { margin-bottom: 0; }
+.code-tip p { margin: 0 0 8px; }
+.code-tip strong { color: var(--text); }
+.code-tip a { color: var(--accent); }
+.code-tip ul, .code-tip ol { margin: 0 0 8px; padding-left: 18px; }
+.code-tip li { margin: 2px 0; }
+
+.code-tip code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--bg-panel);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.code-tip pre {
+  margin: 0 0 8px;
+  padding: 9px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  white-space: pre-wrap;           /* wrap long code instead of needing a horizontal scrollbar */
+}
+
+.code-tip pre code { padding: 0; background: none; }
+
+/* highlight.js token classes, mapped to theme variables. */
+.hljs-keyword, .hljs-literal, .hljs-type { color: var(--syn-keyword); }
+.hljs-name { color: var(--syn-tag); }
+.hljs-attr, .hljs-property { color: var(--syn-attr); }
+.hljs-string, .hljs-regexp { color: var(--syn-string); }
+.hljs-title, .hljs-title.function_, .hljs-title.class_ { color: var(--syn-title); }
+.hljs-built_in { color: var(--syn-built-in); }
+.hljs-number { color: var(--syn-number); }
+.hljs-comment { color: var(--syn-comment); font-style: italic; }
+
+/* Small shared bits demos can reuse. */
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.hint { color: var(--accent); }
+
+button.demo-btn {
+  background: var(--accent);
+  color: #0b1020;
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 14px;
+  margin: 0 8px 8px 0;             /* space when several sit in a row */
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.demo-input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  padding: 7px 10px;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+/* Demo output helpers. TypeScript erases at runtime, so demos render concrete values and, for
+   type-only topics, the resolved types as text. These classes keep that output consistent. */
+.demo h4 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+}
+
+.demo h4:not(:first-child) { margin-top: 22px; }
+
+.rows { display: flex; flex-direction: column; gap: 7px; }
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.row .k { color: var(--text-dim); font-family: var(--mono); font-size: 12.5px; }
+.row .v { font-family: var(--mono); font-size: 12.5px; color: var(--text); text-align: right; }
+
+/* A pill for showing a resolved/inferred type. */
+.tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.ok { color: var(--ok); }
+.err { color: var(--err); }
+
+/* Inline monospace for type expressions mentioned in demo prose. */
+.t { font-family: var(--mono); font-size: 0.9em; color: var(--text); }

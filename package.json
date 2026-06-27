@@ -1,11 +1,28 @@
 {
-  "name": "typescript",
-  "packageManager": "yarn@4.7.0",
+  "name": "typescript-training",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "volta": {
-    "node": "22.14.0",
-    "yarn": "4.7.0"
+    "node": "22.14.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "marked": "^12.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.8.2"
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "typescript": "^5.8.2",
+    "vite": "^5.4.21"
   }
 }
