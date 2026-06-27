@@ -1,5 +1,9 @@
 <p align="center">
-  <img alt="TypeScript" src="assets/typescript.svg" width="84">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/typescript-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/typescript-light.svg">
+    <img alt="TypeScript" src="assets/typescript-dark.svg" width="84">
+  </picture>
 </p>
 
 <h1 align="center">TypeScript Training</h1>
