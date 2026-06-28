@@ -316,6 +316,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
+  margin: 16px 0;
 }
 
 .hint { color: var(--accent); }
@@ -337,6 +338,7 @@ button.demo-btn {
   font-size: 13px;
   font-weight: 600;
   line-height: 1;
+  white-space: nowrap;             /* keep multi-word labels on one line */
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -375,6 +377,54 @@ button.demo-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--accen
 .demo-input:focus {
   outline: none;
   background-size: 3px 56%;         /* the rounded bar slides out on focus */
+}
+
+.demo input[type="checkbox"],
+.demo input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  display: inline-grid;
+  place-content: center;
+  border: 1.5px solid var(--border);
+  background: var(--bg-elevated);
+  vertical-align: middle;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.demo input[type="checkbox"] { border-radius: 4px; }
+.demo input[type="radio"] { border-radius: 50%; }
+
+.demo input[type="checkbox"]:checked,
+.demo input[type="radio"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.demo input[type="checkbox"]:checked::after {
+  content: "";
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.demo input[type="radio"]:checked::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.demo input[type="checkbox"]:focus-visible,
+.demo input[type="radio"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .demo code {                       /* inline code inside a demo, e.g. key = id */
