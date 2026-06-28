@@ -229,16 +229,18 @@ body {
 .code-line {
   white-space: pre;                /* keep indentation, don't wrap */
   width: max-content;
-  min-width: 100%;                 /* so the hover background spans the full line, even short ones */
   padding: 0 8px;
+}
+
+/* A note's lines are wrapped in one group, so hovering anywhere highlights the whole block. */
+.code-group {
+  width: max-content;
+  min-width: 100%;                 /* the highlight spans the full width, even for short lines */
   border-radius: 6px;
 }
 
-.code-line.has-note { cursor: help; }
-
-@media (hover: hover) {
-  .code-line.has-note:hover { background: var(--accent-soft); }   /* subtle, no outline */
-}
+.code-group.has-note { cursor: help; }
+.code-group.active { background: var(--accent-soft); }
 
 .code-tip {
   position: fixed;

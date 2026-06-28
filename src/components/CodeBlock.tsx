@@ -24,39 +24,59 @@ interface DisplayLine {
   note: string
 }
 
-// Parse source into display lines. A comment is a NOTE NAME, not prose: a trailing reference, or the
-// standalone comment line above a statement, names the markdown note to show on hover.
+// Parse source into lines, each tagged with a note name or ''. A standalone comment above a block names
+// every code line below it until a blank line, the next standalone comment, or a line with its own
+// trailing comment. A trailing comment names just its own line.
 function parseLines(source: string): DisplayLine[] {
   const out: DisplayLine[] = []
-  let pending: string[] = []                              // a standalone note name waiting for the next code line
-
+  let block = ''                                          // active note from a standalone comment above
   for (const raw of source.replace(/\n$/, '').split('\n')) {
     const trimmed = raw.trim()
+    if (trimmed === '') { out.push({ code: raw, note: '' }); block = ''; continue }                 // blank ends a block
 
-    if (trimmed.startsWith('//')) { pending.push(trimmed.replace(/^\/+\s*/, '')); continue }        // // noteName
+    if (trimmed.startsWith('//')) { block = trimmed.replace(/^\/+\s*/, ''); continue }               // // noteName
     const blockOnly = trimmed.match(/^\{\/\*\s*(.*?)\s*\*\/\}$/)
-    if (blockOnly) { pending.push(blockOnly[1]); continue }                                          // {/* noteName */}
+    if (blockOnly) { block = blockOnly[1]; continue }                                                 // {/* noteName */}
 
     let code = raw
-    let ref: string | null = null
-    const block = raw.match(/\s*\{\/\*\s*(.*?)\s*\*\/\}\s*$/)                                         // trailing {/* */}
-    if (block) { ref = block[1]; code = raw.slice(0, block.index) }
+    let trailing: string | null = null
+    const b = raw.match(/\s*\{\/\*\s*(.*?)\s*\*\/\}\s*$/)                                              // trailing {/* */}
+    if (b) { trailing = b[1]; code = raw.slice(0, b.index) }
     else {
-      const i = lineCommentIndex(raw)                                                                // trailing //
-      if (i !== -1) { ref = raw.slice(i + 2).trim(); code = raw.slice(0, i).replace(/\s+$/, '') }
+      const i = lineCommentIndex(raw)                                                                 // trailing //
+      if (i !== -1) { trailing = raw.slice(i + 2).trim(); code = raw.slice(0, i).replace(/\s+$/, '') }
     }
 
-    const refs = [...pending, ref].filter(Boolean) as string[]
-    out.push({ code, note: refs[refs.length - 1] ?? '' })  // a trailing ref wins over a standalone one
-    pending = []
+    if (trailing) { out.push({ code, note: trailing }); block = '' }                                  // single-line note, ends the block
+    else { out.push({ code, note: block }) }                                                          // inherit the block note
   }
   return out
 }
 
+type Block = { line: string } | { group: number; note: string; lines: string[] }
+
+// Highlight each line, then fold runs of consecutive lines that share a note into one block.
+function groupBlocks(source: string): Block[] {
+  const lines = parseLines(source).map((l) => ({
+    note: l.note,
+    html: l.code ? hljs.highlight(l.code, { language: 'typescript' }).value : '&nbsp;',
+  }))
+  const blocks: Block[] = []
+  let group = -1
+  let current: { group: number; note: string; lines: string[] } | null = null
+  for (const l of lines) {
+    if (l.note && current && current.note === l.note) { current.lines.push(l.html); continue }
+    if (l.note) { group += 1; current = { group, note: l.note, lines: [l.html] }; blocks.push(current); continue }
+    current = null
+    blocks.push({ line: l.html })                         // a plain, non-hoverable line
+  }
+  return blocks
+}
+
 interface Tip {
   html: string
-  lineTop: number
-  lineBottom: number
+  top: number
+  bottom: number
   left: number
 }
 
@@ -66,29 +86,24 @@ interface CodeBlockProps {
 }
 
 export default function CodeBlock({ code, notes = {} }: CodeBlockProps) {
-  // Parsing + highlighting is real work, so memoise it: only redo when `code` changes,
-  // not when a parent re-renders or when the tooltip moves.
-  const lines = useMemo(
-    () => parseLines(code).map((l) => ({
-      ...l,
-      html: l.code ? hljs.highlight(l.code, { language: 'typescript' }).value : '&nbsp;',
-    })),
-    [code],
-  )
+  // Parsing + highlighting is real work, so memoise it: only redo when `code` changes.
+  const blocks = useMemo(() => groupBlocks(code), [code])
 
   const [tip, setTip] = useState<Tip | null>(null)
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null) // resolved spot, set after we measure
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const [active, setActive] = useState(-1)                // which group is highlighted right now
   const tipRef = useRef<HTMLDivElement>(null)
-  useEffect(() => setTip(null), [code])                   // clear it when we switch lessons
+  useEffect(() => { setTip(null); setActive(-1) }, [code]) // clear when we switch lessons
 
-  const show = (e: MouseEvent<HTMLDivElement>, markdown: string) => {
-    const r = e.currentTarget.getBoundingClientRect()     // the hovered line's box in the viewport
-    setTip({ html: marked.parse(markdown) as string, lineTop: r.top, lineBottom: r.bottom, left: r.left })
-    setPos(null)                                          // hide until we've measured and chosen a side
+  const show = (e: MouseEvent<HTMLDivElement>, group: number, markdown: string) => {
+    const r = e.currentTarget.getBoundingClientRect()     // the whole group's box in the viewport
+    setActive(group)
+    setTip({ html: marked.parse(markdown) as string, top: r.top, bottom: r.bottom, left: r.left })
+    setPos(null)
   }
+  const hide = () => { setActive(-1); setTip(null) }
 
-  // Once the tooltip has rendered we know its size. Place it below the line and above it, then keep
-  // whichever sits more inside the viewport. useLayoutEffect runs before paint, so no visible flicker.
+  // Place the tooltip below the group or above it, keeping whichever sits more inside the viewport.
   useLayoutEffect(() => {
     const el = tipRef.current
     if (!tip || !el) return
@@ -97,29 +112,35 @@ export default function CodeBlock({ code, notes = {} }: CodeBlockProps) {
     const vh = window.innerHeight
     const vw = window.innerWidth
     const visibleRatio = (top: number) => Math.max(0, Math.min(top + h, vh) - Math.max(top, 0)) / h // fraction on screen
-    const below = tip.lineBottom + gap
-    const above = tip.lineTop - gap - h
-    const top = visibleRatio(below) >= visibleRatio(above) ? below : above                          // prefer below on a tie
-    setPos({ top, left: Math.max(8, Math.min(tip.left, vw - w - 8)) })                              // also clamp horizontally
+    const below = tip.bottom + gap
+    const above = tip.top - gap - h
+    const top = visibleRatio(below) >= visibleRatio(above) ? below : above                           // prefer below on a tie
+    setPos({ top, left: Math.max(8, Math.min(tip.left, vw - w - 8)) })                               // also clamp horizontally
   }, [tip])
 
   return (
     <div className="code hljs">
-      {lines.map((l, i) => {
-        const markdown = l.note ? notes[l.note] : null    // resolve the named note's markdown (missing -> not hoverable)
+      {blocks.map((b, i) => {
+        if ('line' in b) {                                // a plain line, not part of any note
+          return <div key={i} className="code-line" dangerouslySetInnerHTML={{ __html: b.line }} />
+        }
+        const markdown = notes[b.note]                    // resolve the named note (missing -> not hoverable)
+        const base = markdown ? 'code-group has-note' : 'code-group'
         return (
           <div
             key={i}
-            className={markdown ? 'code-line has-note' : 'code-line'}
-            onMouseEnter={markdown ? (e) => show(e, markdown) : undefined}
-            onMouseLeave={markdown ? () => setTip(null) : undefined}
-            dangerouslySetInnerHTML={{ __html: l.html }}  // trusted (our own source), so injecting HTML is safe here
-          />
+            className={b.group === active ? `${base} active` : base}
+            onMouseEnter={markdown ? (e) => show(e, b.group, markdown) : undefined}
+            onMouseLeave={markdown ? hide : undefined}
+          >
+            {b.lines.map((html, li) => (
+              <div key={li} className="code-line" dangerouslySetInnerHTML={{ __html: html }} />
+            ))}
+          </div>
         )
       })}
 
       {tip && createPortal(                               // portal: the tooltip lives on <body>, immune to panel clipping
-        // rendered hidden (but measurable) until useLayoutEffect picks a side, then shown at the chosen spot
         <div
           ref={tipRef}
           className="code-tip"
