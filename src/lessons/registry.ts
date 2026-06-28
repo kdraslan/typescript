@@ -27,6 +27,12 @@ const modules = import.meta.glob<LessonModule>('./*/*.tsx', { eager: true })    
 const sources = import.meta.glob<string>('./*/*.tsx', { eager: true, query: '?raw', import: 'default' }) // its source as text
 const noteFiles = import.meta.glob<string>('./*/notes/*.md', { eager: true, query: '?raw', import: 'default' }) // markdown notes
 
+// `meta` and its type import are course plumbing, not lesson code, so strip them from the shown source.
+const stripMeta = (src: string) =>
+  src
+    .replace(/import type \{ LessonMeta \} from '[^']*'\n+/, '')
+    .replace(/export const meta(?:: LessonMeta)? = \{[\s\S]*?\n\}\n*/, '')
+
 export const lessons: Lesson[] = Object.keys(modules)
   .sort()                                                     // folder prefixes (01, 02, ...) keep order
   .map((path) => {
@@ -47,7 +53,7 @@ export const lessons: Lesson[] = Object.keys(modules)
       section: mod.meta.section,
       summary: mod.meta.summary,
       Component: mod.default,                                 // each demo default-exports its component
-      source: sources[path],                                 // raw demo text, shown beside the result
+      source: stripMeta(sources[path]),                      // demo text without the meta block, shown beside the result
       notes,                                                  // { noteName: markdown } for the hover tooltips
     }
   })
